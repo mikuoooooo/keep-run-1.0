@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b57d0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Keep 轨迹生成器</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<style>
+:root{
+  --bg:#f4f6fb; --card:#fff; --ink:#16202e; --muted:#67728a;
+  --brand:#0b57d0; --ok:#0a8f4a; --warn:#b26a00; --bad:#c62828;
+  --line:#e2e7f0; --radius:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  padding:0 14px calc(20px + env(safe-area-inset-bottom));
+}
+header{padding:18px 2px 10px}
+h1{margin:0;font-size:20px;letter-spacing:.5px}
+.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.card{background:var(--card);border-radius:var(--radius);padding:14px;
+  box-shadow:0 1px 3px rgba(16,40,80,.07);margin-bottom:12px}
+.card h2{font-size:14px;margin:0 0 10px;color:var(--muted);font-weight:600;letter-spacing:.3px}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px}
+input,select,button{font-family:inherit}
+input[type=text],input[type=password],input[type=number],select{
+  width:100%;padding:14px 14px;font-size:17px;border:1.5px solid var(--line);
+  border-radius:12px;background:#fbfcfe;color:var(--ink);outline:none;
+  min-height:52px;appearance:none;
+}
+input:focus,select:focus{border-color:var(--brand);background:#fff}
+.row{display:flex;gap:10px}
+.row>*{flex:1;min-width:0}
+button{
+  border:0;border-radius:12px;font-size:17px;font-weight:600;
+  min-height:54px;padding:0 18px;cursor:pointer;transition:.15s;
+}
+button:active{transform:scale(.985)}
+.btn-primary{background:var(--brand);color:#fff;width:100%;margin-top:16px}
+.btn-primary:disabled{background:#a9bce0;cursor:not-allowed}
+.btn-ghost{background:#eef2fb;color:var(--brand);font-size:15px;min-height:44px;padding:0 14px}
+.btn-dl{background:#0a8f4a;color:#fff;width:100%;margin-top:8px}
+.btn-dl.tcx{background:#3a5f9e}
+#keybar{display:flex;align-items:center;gap:10px;font-size:14px}
+#keybar .dot{width:10px;height:10px;border-radius:50%;flex:none}
+#keybar.ok .dot{background:var(--ok)}
+#keybar.bad .dot{background:var(--bad);animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+#keybar .txt{flex:1;min-width:0}
+#keybar.alert{border:1.5px solid var(--bad);background:#fff5f5}
+#log{font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  white-space:pre-wrap;word-break:break-all;margin:0;max-height:260px;overflow:auto;
+  color:#243044}
+#log .ok{color:var(--ok)} #log .warn{color:var(--warn)}
+#log .bad{color:var(--bad)} #log .dim{color:var(--muted)}
+#map{height:320px;border-radius:12px;background:#e9eef7}
+.hide{display:none!important}
+.stat{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.stat:last-child{border:0}
+.stat b{font-weight:600}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
+  background:#16202e;color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;
+  opacity:0;pointer-events:none;transition:.25s;max-width:88vw;z-index:99}
+#toast.show{opacity:1}
+dialog{border:0;border-radius:16px;padding:18px;width:min(92vw,420px);
+  box-shadow:0 12px 40px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(10,20,40,.5)}
+dialog h3{margin:0 0 6px;font-size:17px}
+dialog p{margin:6px 0 12px;font-size:13.5px;color:var(--muted);line-height:1.6}
+.dlg-btns{display:flex;gap:10px;margin-top:14px}
+.dlg-btns button{flex:1}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Keep 轨迹生成器</h1>
+  <div class="sub">高德真实路网 · 1.5 km · 跑步 · 直出 FIT / TCX</div>
+</header>
+
+<section class="card" id="keybar">
+  <span class="dot"></span>
+  <span class="txt" id="keytxt">检查 Key…</span>
+  <button class="btn-ghost" id="btnKey">设置 Key</button>
+</section>
+
+<section class="card">
+  <h2>参数</h2>
+  <label for="address">地址（中文，越具体越好）</label>
+  <input id="address" type="text" value="重庆市江津区重庆交通职业学院"
+         placeholder="例：杭州市西湖区北山街断桥" autocomplete="off">
+
+  <div class="row">
+    <div>
+      <label for="targetKm">目标距离（km）</label>
+      <input id="targetKm" type="number" value="1.5" step="0.1" min="0.5" max="10" inputmode="decimal">
+    </div>
+    <div>
+      <label for="pace">配速（km/h）</label>
+      <input id="pace" type="number" value="10" step="0.5" min="4" max="20" inputmode="decimal">
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label for="mode">运动类型</label>
+      <select id="mode">
+        <option value="run" selected>跑步（Keep 显示“户外跑步”）</option>
+        <option value="walk">步行</option>
+      </select>
+    </div>
+    <div>
+      <label for="waypoints">途经点（越多拐弯越多）</label>
+      <select id="waypoints">
+        <option value="3">3</option>
+        <option value="4" selected>4（推荐）</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="btn-primary" id="btnGo">生成轨迹</button>
+</section>
+
+<section class="card">
+  <h2>进度</h2>
+  <pre id="log" class="dim">等待开始…</pre>
+</section>
+
+<section class="card hide" id="result">
+  <h2>结果</h2>
+  <div id="stats"></div>
+  <button class="btn-dl" id="dlFit">下载 FIT（优先导这个）</button>
+  <button class="btn-dl tcx" id="dlTcx">下载 TCX（备用）</button>
+</section>
+
+<section class="card hide" id="mapcard">
+  <h2>路线预览（蓝线＝轨迹，红点＝起终点）</h2>
+  <div id="map"></div>
+  <div class="sub" style="margin-top:8px">底图需联网（OpenStreetMap）；加载不出来时线条仍然可见。</div>
+</section>
+
+<div id="toast"></div>
+
+<dialog id="keydlg">
+  <h3>设置高德 Key</h3>
+  <p>在 <b>console.amap.com</b> → 应用管理 → 添加 Key，<b>服务平台必须选「Web服务」</b>。
+     Key 只存在本机浏览器（localStorage），不会上传，也不会写进生成的文件。</p>
+  <input id="keyInput" type="password" placeholder="32 位 Key" autocomplete="off" spellcheck="false">
+  <div class="dlg-btns">
+    <button class="btn-ghost" id="keyCancel">取消</button>
+    <button class="btn-primary" id="keySave" style="margin:0">保存</button>
+  </div>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" defer></script>
+<script>
+"use strict";
+
+const CORE = {};
+(function (C) {
+
+  const R_EARTH = 6371008.8;
+  const A_AXIS = 6378245.0;
+  const EE = 0.00669342162296594323;
+  const FIT_EPOCH = 631065600;
+
+  function outOfChina(lng, lat) {
+    return !(lng > 73.66 && lng < 135.05 && lat > 3.86 && lat < 53.55);
+  }
+  function tLat(x, y) {
+    let r = -100 + 2 * x + 3 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+    r += (20 * Math.sin(6 * x * Math.PI) + 20 * Math.sin(2 * x * Math.PI)) * 2 / 3;
+    r += (20 * Math.sin(y * Math.PI) + 40 * Math.sin(y / 3 * Math.PI)) * 2 / 3;
+    r += (160 * Math.sin(y / 12 * Math.PI) + 320 * Math.sin(y * Math.PI / 30)) * 2 / 3;
+    return r;
+  }
+  function tLng(x, y) {
+    let r = 300 + x + 2 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+    r += (20 * Math.sin(6 * x * Math.PI) + 20 * Math.sin(2 * x * Math.PI)) * 2 / 3;
+    r += (20 * Math.sin(x * Math.PI) + 40 * Math.sin(x / 3 * Math.PI)) * 2 / 3;
+    r += (150 * Math.sin(x / 12 * Math.PI) + 300 * Math.sin(x / 30 * Math.PI)) * 2 / 3;
+    return r;
+  }
+  function wgs84ToGcj02(lng, lat) {
+    if (outOfChina(lng, lat)) return [lng, lat];
+    let dLat = tLat(lng - 105, lat - 35);
+    let dLng = tLng(lng - 105, lat - 35);
+    const rad = lat / 180 * Math.PI;
+    const magic = 1 - EE * Math.sin(rad) ** 2;
+    const sq = Math.sqrt(magic);
+    dLat = (dLat * 180) / ((A_AXIS * (1 - EE)) / (magic * sq) * Math.PI);
+    dLng = (dLng * 180) / (A_AXIS / sq * Math.cos(rad) * Math.PI);
+    return [lng + dLng, lat + dLat];
+  }
+  function gcj02ToWgs84(lng, lat) {
+    if (outOfChina(lng, lat)) return [lng, lat];
+    let wl = lng, wa = lat;
+    for (let i = 0; i < 60; i++) {
+      const [gl, ga] = wgs84ToGcj02(wl, wa);
+      const dl = gl - lng, da = ga - lat;
+      if (Math.abs(dl) < 1e-10 && Math.abs(da) < 1e-10) break;
+      wl -= dl; wa -= da;
+    }
+    return [wl, wa];
+  }
+
+  function haversine(lat1, lon1, lat2, lon2) {
+    const p1 = lat1 * Math.PI / 180, p2 = lat2 * Math.PI / 180;
+    const dp = p2 - p1, dl = (lon2 - lon1) * Math.PI / 180;
+    const h = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+    return 2 * R_EARTH * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+  function offsetM(lat, lon, dx, dy) {
+    return [lat + dy / 111320, lon + dx / (111320 * Math.cos(lat * Math.PI / 180))];
+  }
+  function lineLength(pts) {
+    let t = 0;
+    for (let i = 0; i < pts.length - 1; i++)
+      t += haversine(pts[i][1], pts[i][0], pts[i + 1][1], pts[i + 1][0]);
+    return t;
+  }
+  function countTurns(pts, minDeg) {
+    minDeg = minDeg || 35;
+    if (pts.length < 3) return 0;
+    const bearing = (a, b) => {
+      const p1 = a[0] * Math.PI / 180, p2 = b[0] * Math.PI / 180;
+      const dl = (b[1] - a[1]) * Math.PI / 180;
+      const y = Math.sin(dl) * Math.cos(p2);
+      const x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+      return Math.atan2(y, x) * 180 / Math.PI;
+    };
+    const bs = [];
+    for (let i = 0; i < pts.length - 1; i++) bs.push(bearing(pts[i], pts[i + 1]));
+    let n = 0;
+    for (let i = 0; i < bs.length - 1; i++) {
+      let d = Math.abs(((bs[i + 1] - bs[i] + 180) % 360 + 360) % 360 - 180);
+      if (d > minDeg) n++;
+    }
+    return n;
+  }
+
+  function parsePolyline(poly) {
+    const out = [];
+    if (!poly) return out;
+    for (const raw of String(poly).split(";")) {
+      const s = raw.trim();
+      if (!s) continue;
+      const parts = s.split(",");
+      if (parts.length < 2) continue;
+      const lng = parseFloat(parts[0]), lat = parseFloat(parts[1]);
+      if (!isFinite(lng) || !isFinite(lat)) continue;
+      if (lng < -180 || lng > 180 || lat < -90 || lat > 90) continue;
+      out.push([lng, lat]);
+    }
+    return out;
+  }
+  function parseWalkingResponse(data, raw) {
+    if (!data || String(data.status) !== "1") {
+      throw new Error("步行路径规划失败：" + ((data && data.info) || "未知") +
+        "（infocode=" + ((data && data.infocode) || "?") + "）");
+    }
+    const paths = (data.route && data.route.paths) || [];
+    if (!paths.length) throw new Error("步行路径规划没有返回 paths（infocode=20004）");
+    const p0 = paths[0];
+    const steps = p0.steps || [];
+    const line = [];
+    for (const st of steps) {
+      for (const p of parsePolyline(st.polyline)) {
+        const last = line[line.length - 1];
+        if (!last || Math.abs(last[0] - p[0]) > 1e-7 || Math.abs(last[1] - p[1]) > 1e-7) line.push(p);
+      }
+    }
+    if (line.length < 2) {
+      throw new Error("polyline 解析后只有 " + line.length + " 个点（steps=" + steps.length +
+        "）。原始响应前 500 字符：\n" + String(raw || "(空)").slice(0, 500));
+    }
+    return { line, apiDistance: parseFloat(p0.distance || 0) };
+  }
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function makeWaypoints(cLat, cLon, count, rng, scale, minM, maxM) {
+    const weights = [], n = count;
+    let s = 0;
+    for (let i = 0; i < n; i++) { const w = 0.65 + rng() * 0.8; weights.push(w); s += w; }
+    const phase = rng() * Math.PI * 2;
+    const out = [];
+    let acc = 0;
+    for (let i = 0; i < n; i++) {
+      const ang = phase + Math.PI * 2 * acc / s;
+      acc += weights[i];
+      const d = (minM + rng() * (maxM - minM)) * scale;
+      const [la, lo] = offsetM(cLat, cLon, d * Math.cos(ang), d * Math.sin(ang));
+      out.push([lo, la]);
+    }
+    return out;
+  }
+  function jitterPt(pt, rng, minM, maxM) {
+    const d = (minM || 3) + rng() * ((maxM || 12) - (minM || 3));
+    const a = rng() * Math.PI * 2;
+    const [la, lo] = offsetM(pt[1], pt[0], d * Math.cos(a), d * Math.sin(a));
+    return [lo, la];
+  }
+
+  async function planRoute(o, api, log) {
+    let scale = 1, best = null, lastErr = null;
+    const targetM = (o.targetKm || 0) * 1000;
+    const tol = Math.max(60, targetM * 0.06);
+
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const wps = makeWaypoints(o.lat, o.lon, o.waypointCount, o.rng, scale,
+        o.waypointMinM, o.waypointMaxM);
+      const chain = [jitterPt(o.center, o.rng)].concat(wps, [jitterPt(o.center, o.rng)]);
+      let full = [chain[0]], calls = 0;
+      try {
+        for (let i = 0; i < chain.length - 1; i++) {
+          const seg = await api.walking(chain[i], chain[i + 1]);
+          calls++;
+          for (const p of seg.line) {
+            const last = full[full.length - 1];
+            if (!last || haversine(last[1], last[0], p[1], p[0]) > 0.3) full.push(p);
+          }
+          await sleep(150);
+        }
+      } catch (e) {
+        lastErr = e;
+        log("第 " + attempt + " 次规划失败：" + e.message, "warn");
+        continue;
+      }
+      const total = lineLength(full);
+      log("第 " + attempt + " 次：半径系数 " + scale.toFixed(2) + " / " +
+        (chain.length - 1) + " 段 / " + calls + " 次调用 / " + (total / 1000).toFixed(2) + " km");
+      if (!o.targetKm) return { line: full, total, calls, attempts: attempt };
+
+      const err = Math.abs(total - targetM);
+      if (!best || err < best.err) best = { line: full, total, calls, err };
+      if (err <= tol) {
+        log("命中目标：" + (total / 1000).toFixed(2) + " km（误差 " + err.toFixed(0) + " m）", "ok");
+        return { line: full, total, calls, attempts: attempt };
+      }
+      scale *= Math.max(0.45, Math.min(2.2, Math.pow(targetM / total, 0.85)));
+      log("实际 " + (total / 1000).toFixed(2) + " km 偏离目标，半径系数调成 " +
+        scale.toFixed(2) + " 再试一次", "warn");
+    }
+    if (best) {
+      log("两次没精确命中，采用最接近的一次：" + (best.total / 1000).toFixed(2) + " km", "warn");
+      return best;
+    }
+    throw lastErr || new Error("路径规划失败");
+  }
+
+  function resampleLine(pts, step) {
+    if (pts.length < 2) return pts.slice();
+    const out = [pts[0]];
+    let cur = pts[0], carry = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const nxt = pts[i];
+      let seg = haversine(cur[1], cur[0], nxt[1], nxt[0]);
+      let guard = 0;
+      while (seg > 1e-6 && guard++ < 100000) {
+        const need = step - carry;
+        if (seg >= need) {
+          const t = need / seg;
+          cur = [cur[0] + (nxt[0] - cur[0]) * t, cur[1] + (nxt[1] - cur[1]) * t];
+          out.push(cur);
+          seg -= need;
+          carry = 0;
+        } else {
+          carry += seg;
+          cur = nxt;
+          seg = 0;
+        }
+      }
+    }
+    const tail = haversine(out[out.length - 1][1], out[out.length - 1][0], pts[pts.length - 1][1], pts[pts.length - 1][0]);
+    if (tail > step * 0.4) out.push(pts[pts.length - 1]);
+    return out;
+  }
+
+  function fillSmoothElevations(raw, fallback, maxSmooth) {
+    maxSmooth = maxSmooth == null ? 0.3 : maxSmooth;
+    const vals = raw.slice();
+    const filled = [];
+    const good = vals.filter(v => v != null && isFinite(v));
+    const mean = good.length ? good.reduce((a, b) => a + b, 0) / good.length : fallback;
+    for (let i = 0; i < vals.length; i++) {
+      if (vals[i] == null || !isFinite(vals[i])) {
+        let prev = null;
+        for (let j = i - 1; j >= 0; j--) if (vals[j] != null && isFinite(vals[j])) { prev = vals[j]; break; }
+        vals[i] = prev != null ? prev : mean;
+        filled.push(i);
+      }
+    }
+    const out = [];
+    for (let i = 0; i < vals.length; i++) {
+      if (i > 0 && i < vals.length - 1) {
+        const avg = (vals[i - 1] + vals[i] + vals[i + 1]) / 3;
+        const d = Math.max(-maxSmooth, Math.min(maxSmooth, avg - vals[i]));
+        out.push(Math.round((vals[i] + d) * 10) / 10);
+      } else out.push(Math.round(vals[i] * 10) / 10);
+    }
+    return { eles: out, filled };
+  }
+
+  function assignTimes(pts, startMs, targetKmh, rng) {
+    const target = Math.max(1, targetKmh) / 3.6;
+    const vCap = target * 1.25;
+    const phase = rng() * Math.PI * 2;
+    const n = pts.length;
+    pts[0].t = startMs;
+    let acc = 0, carry = 0;
+    for (let i = 1; i < n; i++) {
+      const d = haversine(pts[i - 1].lat, pts[i - 1].lon, pts[i].lat, pts[i].lon);
+      let wave = 1 + 0.08 * Math.sin(2 * Math.PI * 2 * i / Math.max(1, n - 1) + phase);
+      wave += (rng() - 0.5) * 0.06;
+      const span = d / (target * Math.max(0.6, wave)) + carry;
+      const floorSec = Math.max(2, Math.ceil(d / vCap));
+      const sec = Math.max(floorSec, Math.round(span));
+      carry = span - sec;
+      acc += sec;
+      pts[i].t = startMs + acc * 1000;
+    }
+  }
+
+  function pickStartTime(durationSec, range, rng, nowMs) {
+    const now = nowMs || Date.now();
+    if (range && range.length === 2) {
+      const d0 = new Date(range[0] + "T00:00:00");
+      const d1 = new Date(range[1] + "T00:00:00");
+      const span = Math.max(0, Math.round((d1 - d0) / 86400000));
+      const hours = [6, 7, 8, 17, 18, 19, 20];
+      for (let i = 0; i < 60; i++) {
+        const day = new Date(d0.getTime() + Math.floor(rng() * (span + 1)) * 86400000);
+        const cand = new Date(day.getFullYear(), day.getMonth(), day.getDate(),
+          hours[Math.floor(rng() * hours.length)], Math.floor(rng() * 60), 0, 0);
+        if (cand.getTime() + durationSec * 1000 < now - 30 * 60000) return cand;
+      }
+    }
+    const hours = [6, 7, 8, 17, 18, 19, 20];
+    for (let i = 0; i < 40; i++) {
+      const day = new Date(now - (1 + Math.floor(rng() * 6)) * 86400000);
+      const cand = new Date(day.getFullYear(), day.getMonth(), day.getDate(),
+        hours[Math.floor(rng() * hours.length)], Math.floor(rng() * 60), 0, 0);
+      if (cand.getTime() + durationSec * 1000 < now - 30 * 60000) return cand;
+    }
+    return new Date(now - durationSec * 1000 - 3600000);
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+  function utcStr(ms) { return new Date(ms).toISOString().slice(0, 19) + "Z"; }
+  function fmtDur(sec) {
+    sec = Math.round(sec);
+    const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+    return (h ? h + "小时" + String(m).padStart(2, "0") + "分"
+      : m + "分" + String(s).padStart(2, "0") + "秒");
+  }
+
+  const CRC_TABLE = [0x0000, 0xCC01, 0xD801, 0x1400, 0xF001, 0x3C00, 0x2800, 0xE401,
+    0xA001, 0x6C00, 0x7800, 0xB401, 0x5000, 0x9C01, 0x8801, 0x4400];
+  function fitCrc(bytes, crc) {
+    crc = crc || 0;
+    for (let i = 0; i < bytes.length; i++) {
+      const b = bytes[i];
+      let t = CRC_TABLE[crc & 0xF];
+      crc = (crc >> 4) & 0x0FFF; crc ^= t ^ CRC_TABLE[b & 0xF];
+      t = CRC_TABLE[crc & 0xF];
+      crc = (crc >> 4) & 0x0FFF; crc ^= t ^ CRC_TABLE[(b >> 4) & 0xF];
+    }
+    return crc;
+  }
+  const BT = { ENUM: 0x00, STR: 0x07, U16: 0x84, U32: 0x86, U32Z: 0x8C, S32: 0x85 };
+
+  const FIT_FILE_ID = [[0, 1, BT.ENUM], [1, 2, BT.U16], [3, 4, BT.U32Z], [4, 4, BT.U32], [8, 24, BT.STR]];
+  const FIT_RECORD = [[253, 4, BT.U32], [0, 4, BT.S32], [1, 4, BT.S32], [2, 2, BT.U16], [5, 4, BT.U32], [6, 2, BT.U16]];
+  const FIT_LAP = [[253, 4, BT.U32], [2, 4, BT.U32], [3, 4, BT.S32], [4, 4, BT.S32], [5, 4, BT.S32], [6, 4, BT.S32],
+    [7, 4, BT.U32], [8, 4, BT.U32], [9, 4, BT.U32], [11, 2, BT.U16], [13, 2, BT.U16], [14, 2, BT.U16],
+    [23, 1, BT.ENUM], [24, 1, BT.ENUM], [25, 1, BT.ENUM], [39, 1, BT.ENUM], [0, 1, BT.ENUM], [1, 1, BT.ENUM]];
+  const FIT_SESSION = [[253, 4, BT.U32], [2, 4, BT.U32], [5, 1, BT.ENUM], [6, 1, BT.ENUM],
+    [7, 4, BT.U32], [8, 4, BT.U32], [9, 4, BT.U32], [11, 2, BT.U16], [14, 2, BT.U16], [15, 2, BT.U16],
+    [25, 2, BT.U16], [26, 2, BT.U16], [0, 1, BT.ENUM], [1, 1, BT.ENUM]];
+  const FIT_ACTIVITY = [[253, 4, BT.U32], [0, 4, BT.U32], [1, 2, BT.U16], [2, 1, BT.ENUM], [3, 1, BT.ENUM], [4, 1, BT.ENUM]];
+
+  function u8(v) { return [v & 0xFF]; }
+  function u16(v) { return [v & 0xFF, (v >> 8) & 0xFF]; }
+  function u32(v) { v = v >>> 0; return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+  function s32(v) { return u32(v < 0 ? v + 4294967296 : v); }
+
+  function packField(base, size, value) {
+    if (base === BT.ENUM) return u8(value | 0);
+    if (base === BT.STR) {
+      const enc = new TextEncoder().encode(String(value)).slice(0, size);
+      const out = new Array(size).fill(0);
+      for (let i = 0; i < enc.length; i++) out[i] = enc[i];
+      return out;
+    }
+    if (base === BT.U16) return u16(value | 0);
+    if (base === BT.U32 || base === BT.U32Z) return u32(value | 0);
+    if (base === BT.S32) return s32(value | 0);
+    return [];
+  }
+  const fitTime = ms => Math.max(0, Math.floor(ms / 1000) - FIT_EPOCH);
+  const fitSemis = deg => Math.max(-2147483648, Math.min(2147483647, Math.round(deg * 2147483648 / 180)));
+  const fitAlt = m => Math.max(0, Math.min(65535, Math.round((m + 500) * 5)));
+  const fitDist = m => Math.max(0, Math.min(4294967295, Math.round(m * 100)));
+  const fitSpeed = mps => Math.max(0, Math.min(65535, Math.round(mps * 1000)));
+  const fitDur = s => Math.max(0, Math.min(4294967295, Math.round(s * 1000)));
+
+  function buildFit(pts, meta) {
+    const bytes = [];
+    let local = 0;
+    const define = (gid, fields) => {
+      const lid = local++;
+      bytes.push(0x40 | lid, 0, 0);
+      bytes.push(...u16(gid));
+      bytes.push(fields.length);
+      for (const f of fields) bytes.push(f[0], f[1], f[2]);
+      return lid;
+    };
+    const data = (lid, fields, vals) => {
+      bytes.push(lid);
+      for (const [fid, size, base] of fields) bytes.push(...packField(base, size, vals[fid] || 0));
+    };
+
+    let lid = define(0, FIT_FILE_ID);
+    data(lid, FIT_FILE_ID, {
+      0: 4, 1: 1, 3: meta.serial, 4: fitTime(meta.endMs),
+      8: meta.eleTag.slice(0, 24)
+    });
+
+    lid = define(20, FIT_RECORD);
+    for (const p of pts) {
+      data(lid, FIT_RECORD, {
+        253: fitTime(p.t), 0: fitSemis(p.lat), 1: fitSemis(p.lon),
+        2: fitAlt(p.ele), 5: fitDist(p.dist), 6: fitSpeed(p.speed)
+      });
+    }
+
+    const base = {
+      253: fitTime(meta.endMs), 2: fitTime(meta.startMs),
+      7: fitDur(meta.elapsed), 8: fitDur(meta.elapsed),
+      9: fitDist(meta.distance), 11: meta.calories
+    };
+    lid = define(19, FIT_LAP);
+    data(lid, FIT_LAP, Object.assign({}, base, {
+      3: fitSemis(pts[0].lat), 4: fitSemis(pts[0].lon),
+      5: fitSemis(pts[pts.length - 1].lat), 6: fitSemis(pts[pts.length - 1].lon),
+      13: fitSpeed(meta.avgSpeed), 14: fitSpeed(meta.maxSpeed),
+      23: 0, 24: 0, 25: meta.sport, 39: 0, 0: 9, 1: 1
+    }));
+
+    lid = define(18, FIT_SESSION);
+    data(lid, FIT_SESSION, Object.assign({}, base, {
+      5: meta.sport, 6: 0,
+      14: fitSpeed(meta.avgSpeed), 15: fitSpeed(meta.maxSpeed),
+      25: 0, 26: 1, 0: 8, 1: 1
+    }));
+
+    lid = define(34, FIT_ACTIVITY);
+    data(lid, FIT_ACTIVITY, { 253: fitTime(meta.endMs), 0: fitDur(meta.elapsed), 1: 1, 2: 0, 3: 8, 4: 1 });
+
+    const header = [14, 0x10, 0x54, 0x08].concat(u32(bytes.length), [0x2E, 0x46, 0x49, 0x54]);
+    const headerCrc = fitCrc(header);
+    header.push(...u16(headerCrc));
+    const full = header.concat(bytes);
+    const fileCrc = fitCrc(full);
+    full.push(...u16(fileCrc));
+    return new Uint8Array(full);
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+  function buildTcx(pts, meta) {
+    const L = [];
+    L.push('<?xml version="1.0" encoding="UTF-8"?>');
+    L.push('<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"' +
+      ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"' +
+      ' xsi:schemaLocation="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2' +
+      ' http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd">');
+    L.push('  <Activities>');
+    L.push('    <Activity Sport="' + meta.sportTcx + '">');
+    L.push('      <Id>' + utcStr(meta.startMs) + '</Id>');
+    L.push('      <Lap StartTime="' + utcStr(meta.startMs) + '">');
+    L.push('        <TotalTimeSeconds>' + meta.elapsed.toFixed(1) + '</TotalTimeSeconds>');
+    L.push('        <DistanceMeters>' + meta.distance.toFixed(1) + '</DistanceMeters>');
+    L.push('        <MaximumSpeed>' + meta.maxSpeed.toFixed(3) + '</MaximumSpeed>');
+    L.push('        <Calories>' + meta.calories + '</Calories>');
+    L.push('        <Intensity>Active</Intensity>');
+    L.push('        <TriggerMethod>Manual</TriggerMethod>');
+    L.push('        <Track>');
+    for (const p of pts) {
+      L.push('          <Trackpoint>');
+      L.push('            <Time>' + utcStr(p.t) + '</Time>');
+      L.push('            <Position>');
+      L.push('              <LatitudeDegrees>' + p.lat.toFixed(6) + '</LatitudeDegrees>');
+      L.push('              <LongitudeDegrees>' + p.lon.toFixed(6) + '</LongitudeDegrees>');
+      L.push('            </Position>');
+      L.push('            <AltitudeMeters>' + p.ele.toFixed(1) + '</AltitudeMeters>');
+      L.push('            <DistanceMeters>' + p.dist.toFixed(1) + '</DistanceMeters>');
+      L.push('          </Trackpoint>');
+    }
+    L.push('        </Track>');
+    L.push('      </Lap>');
+    L.push('      <Notes>' + esc(meta.note) + '</Notes>');
+    L.push('      <Creator xsi:type="Device_t">');
+    L.push('        <Name>keep_track_web</Name>');
+    L.push('        <UnitId>' + meta.serial + '</UnitId>');
+    L.push('        <ProductID>1</ProductID>');
+    L.push('        <Version><VersionMajor>1</VersionMajor><VersionMinor>0</VersionMinor></Version>');
+    L.push('      </Creator>');
+    L.push('    </Activity>');
+    L.push('  </Activities>');
+    L.push('</TrainingCenterDatabase>');
+    return L.join("\n");
+  }
+
+  async function buildTrack(cfg, api, log) {
+    const rng = mulberry32(cfg.seed >>> 0);
+    const o = Object.assign({
+      waypointCount: 4, waypointMinM: 110, waypointMaxM: 260,
+      elevationFallback: 30, startDateRange: null
+    }, cfg);
+
+    log("① 解析地址：" + o.address);
+    const geo = await api.geocode(o.address);
+    log("   → " + geo.formatted + "（" + geo.lng.toFixed(6) + ", " + geo.lat.toFixed(6) + "）", "ok");
+
+    const center = [geo.lng, geo.lat];
+    log("② 规划路网：起点 → " + o.waypointCount + " 个途经点 → 起点（目标 " + o.targetKm + " km）");
+    const route = await planRoute({
+      lat: geo.lat, lon: geo.lng, center, rng,
+      targetKm: o.targetKm, waypointCount: o.waypointCount,
+      waypointMinM: o.waypointMinM, waypointMaxM: o.waypointMaxM
+    }, api, log);
+    const turns = countTurns(route.line);
+    log("   原始折线 " + route.line.length + " 顶点 / " + (route.total / 1000).toFixed(2) +
+      " km / 拐弯 " + turns + " 次 / 接口调用 " + route.calls + " 次",
+      turns >= 8 ? "ok" : "warn");
+
+    const step = o.sampleMeters > 0 ? o.sampleMeters
+      : Math.max(4, Math.round((o.paceKmh / 3.6) * 3.5 * 2) / 2);
+    const line = resampleLine(route.line, step);
+    log("③ 按 " + step.toFixed(1) + " 米重采样 → " + line.length + " 个点");
+
+    const pts = [];
+    for (const [lng, lat] of line) {
+      const [wl, wa] = gcj02ToWgs84(lng, lat);
+      pts.push({ lat: wa, lon: wl, ele: 0, dist: 0, speed: 0, t: 0 });
+    }
+    let acc = 0;
+    for (let i = 0; i < pts.length; i++) {
+      if (i) acc += haversine(pts[i - 1].lat, pts[i - 1].lon, pts[i].lat, pts[i].lon);
+      pts[i].dist = acc;
+    }
+    const total = acc;
+
+    log("④ 查询高程（" + pts.length + " 点，每批 100）");
+    let rawEle = null, eleSrc = "基准海拔", eleKind = "flat";
+    try {
+      rawEle = await api.elevation(pts.map(p => [p.lat, p.lon]));
+      if (rawEle && rawEle.some(v => v != null && isFinite(v))) {
+        eleSrc = "Open-Elevation"; eleKind = "real";
+      } else rawEle = null;
+    } catch (e) {
+      log("   Open-Elevation 不可用：" + e.message, "warn");
+    }
+    if (!rawEle) {
+      log("   降级为基准海拔 " + o.elevationFallback + " m（非真实地形，Keep 不影响）", "warn");
+      rawEle = new Array(pts.length).fill(null);
+    }
+    const es = fillSmoothElevations(rawEle, o.elevationFallback, 0.3);
+    for (let i = 0; i < pts.length; i++) pts[i].ele = es.eles[i];
+    log("   高程来源：" + eleSrc + " ｜ " + Math.min(...es.eles).toFixed(1) + " ~ " +
+      Math.max(...es.eles).toFixed(1) + " m", eleKind === "real" ? "ok" : "warn");
+    if (es.filled.length && eleKind === "real")
+      log("   有 " + es.filled.length + " 个点缺高程，已用邻近值填补", "warn");
+
+    log("⑤ 生成时间戳（目标 " + o.paceKmh + " km/h）");
+    const estDur = total / (o.paceKmh / 3.6);
+    const start = pickStartTime(estDur, o.startDateRange, rng);
+    assignTimes(pts, start.getTime(), o.paceKmh, rng);
+
+    for (let i = 0; i < pts.length; i++) {
+      let d, dt;
+      if (i + 1 < pts.length) {
+        d = pts[i + 1].dist - pts[i].dist;
+        dt = Math.max(1, (pts[i + 1].t - pts[i].t) / 1000);
+      } else if (i) {
+        d = pts[i].dist - pts[i - 1].dist;
+        dt = Math.max(1, (pts[i].t - pts[i - 1].t) / 1000);
+      } else { d = 0; dt = 1; }
+      pts[i].speed = d / dt;
+    }
+    const elapsed = (pts[pts.length - 1].t - pts[0].t) / 1000;
+    const avgSpeed = total / Math.max(1e-6, elapsed);
+    const maxSpeed = Math.max(...pts.map(p => p.speed));
+
+    const kg = o.weightKg || 65;
+    const kmhNow = avgSpeed * 3.6;
+    const met = kmhNow < 4.5 ? 2.8 : kmhNow < 5.5 ? 3.5 : kmhNow < 6.5 ? 4.3 :
+      kmhNow < 8 ? 6.0 : kmhNow < 9.5 ? 8.3 : 9.8;
+    const calories = Math.max(1, Math.round(met * kg * elapsed / 3600));
+
+    const isRun = o.mode === "run";
+    const eleTag = "keep_track_web/ele=" + (eleKind === "real" ? "openelev" : "flat");
+    const meta = {
+      startMs: pts[0].t, endMs: pts[pts.length - 1].t,
+      elapsed, distance: total, avgSpeed, maxSpeed, calories,
+      sport: isRun ? 1 : 11,
+      sportTcx: isRun ? "Running" : "Other",
+      serial: 10000000 + Math.floor(rng() * 89999999),
+      eleTag,
+      eleLabel: eleKind === "real"
+        ? ("Open-Elevation 真实 DEM（" + Math.min(...es.eles).toFixed(0) + "~" +
+           Math.max(...es.eles).toFixed(0) + " m）")
+        : ("基准海拔 " + o.elevationFallback + " m（合成）"),
+      note: "海拔来源：" + eleSrc + "（" + (eleKind === "real"
+        ? "真实 DEM 地面高程，不反映桥面/天桥/隧道"
+        : "合成值，非真实地形") +
+        "）；路线来源：高德步行路径规划；点数 " + pts.length + "。",
+      turns
+    };
+
+    log("⑥ 写入文件…");
+    const fit = buildFit(pts, meta);
+    const tcx = buildTcx(pts, meta);
+    log("   FIT " + (fit.length / 1024).toFixed(1) + " KB ｜ TCX " +
+      (new Blob([tcx]).size / 1024).toFixed(1) + " KB", "ok");
+
+    return { pts, meta, fit, tcx, routeLine: route.line, step, total, elapsed, avgSpeed, maxSpeed };
+  }
+
+  Object.assign(C, {
+    R_EARTH, haversine, offsetM, lineLength, countTurns,
+    wgs84ToGcj02, gcj02ToWgs84, outOfChina,
+    parsePolyline, parseWalkingResponse,
+    mulberry32, makeWaypoints, jitterPt, planRoute, resampleLine,
+    fillSmoothElevations, assignTimes, pickStartTime,
+    fitCrc, buildFit, buildTcx, buildTrack,
+    utcStr, fmtDur, sleep
+  });
+})(CORE);
+
+const $ = s => document.querySelector(s);
+const logEl = $("#log");
+const KEY_STORE = "keep_track_amap_key_v1";
+
+function log(msg, cls) {
+  const t = new Date().toTimeString().slice(0, 8);
+  const span = document.createElement("span");
+  if (cls) span.className = cls;
+  span.textContent = "[" + t + "] " + msg + "\n";
+  if (!logEl.textContent.trim() || logEl.textContent === "等待开始…") logEl.textContent = "";
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function toast(msg, ms) {
+  const el = $("#toast");
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("show"), ms || 2200);
+}
+function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
+function maskKey(k) { return k && k.length >= 8 ? k.slice(0, 4) + "****" : "****"; }
+
+function refreshKeyBar() {
+  const k = getKey(), bar = $("#keybar"), txt = $("#keytxt");
+  if (k.length >= 10) {
+    bar.className = "card ok";
+    txt.innerHTML = "Key 已设置（<b>" + maskKey(k) + "</b>）";
+  } else {
+    bar.className = "card bad alert";
+    txt.innerHTML = "<b>未设置高德 Key</b>，点右边按钮填入才能生成";
+  }
+}
+
+async function fetchJson(url, opt) {
+  const r = await fetch(url, Object.assign({ referrerPolicy: "no-referrer" }, opt || {}));
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+function xy(pt) { return pt[0].toFixed(6) + "," + pt[1].toFixed(6); }
+
+const API = {
+  async geocode(address) {
+    const key = getKey();
+    if (!key) throw new Error("未设置 Key");
+    const url = "https://restapi.amap.com/v3/geocode/geo?key=" + encodeURIComponent(key) +
+      "&address=" + encodeURIComponent(address) + "&output=JSON";
+    const d = await fetchJson(url);
+    if (String(d.status) !== "1") throw new Error("地理编码失败：" + d.info + "（" + d.infocode + "）");
+    if (!d.geocodes || !d.geocodes.length) throw new Error("这个地址没解析出坐标，加「市+区+路名」再试");
+    const g = d.geocodes[0];
+    const [lng, lat] = g.location.split(",").map(Number);
+    return { lng, lat, formatted: g.formatted_address || address };
+  },
+
+  async walking(origin, dest) {
+    const key = getKey();
+    const url = "https://restapi.amap.com/v3/direction/walking?key=" + encodeURIComponent(key) +
+      "&origin=" + xy(origin) + "&destination=" + xy(dest) + "&output=JSON";
+    const d = await fetchJson(url);
+    return CORE.parseWalkingResponse(d, JSON.stringify(d));
+  },
+
+  async elevation(points) {
+    const out = [];
+    const B = 100;
+    for (let i = 0; i < points.length; i += B) {
+      const batch = points.slice(i, i + B);
+      const r = await fetch("https://api.open-elevation.com/api/v1/lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        referrerPolicy: "no-referrer",
+        body: JSON.stringify({ locations: batch.map(p => ({ latitude: p[0], longitude: p[1] })) })
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const d = await r.json();
+      if (!d.results || d.results.length !== batch.length) throw new Error("返回点数不匹配");
+      for (const x of d.results) out.push(typeof x.elevation === "number" ? x.elevation : null);
+      await CORE.sleep(300);
+    }
+    return out;
+  }
+};
+
+let last = null;
+
+async function generate() {
+  const btn = $("#btnGo");
+  if (!getKey()) { $("#keydlg").showModal(); return; }
+
+  const cfg = {
+    address: $("#address").value.trim(),
+    targetKm: parseFloat($("#targetKm").value) || 0,
+    paceKmh: parseFloat($("#pace").value) || 10,
+    mode: $("#mode").value,
+    waypointCount: parseInt($("#waypoints").value, 10) || 4,
+    seed: (Date.now() % 100000) | 0,
+    startDateRange: ["2026-11-01", "2026-11-04"]
+  };
+
+  btn.disabled = true; btn.textContent = "生成中…";
+  $("#result").classList.add("hide");
+  $("#mapcard").classList.add("hide");
+  logEl.textContent = "";
+  log("开始：" + cfg.address + " ｜ " + cfg.targetKm + " km ｜ " + cfg.paceKmh + " km/h");
+
+  try {
+    last = await CORE.buildTrack(cfg, API, log);
+    showResult(last, cfg);
+    toast("生成成功");
+  } catch (e) {
+    log("失败：" + e.message, "bad");
+    toast("失败：" + e.message.slice(0, 60), 4000);
+  } finally {
+    btn.disabled = false; btn.textContent = "生成轨迹";
+  }
+}
+
+function showResult(r, cfg) {
+  const paceSec = 1000 / r.avgSpeed;
+  const pace = Math.floor(paceSec / 60) + "'" +
+    String(Math.round(paceSec % 60)).padStart(2, "0") + "\"/km";
+  $("#stats").innerHTML = [
+    ["运动类型", cfg.mode === "run" ? "跑步 Running" : "步行 Walking"],
+    ["总距离", (r.total / 1000).toFixed(2) + " km"],
+    ["总时长", CORE.fmtDur(r.elapsed)],
+    ["平均配速", pace + "（" + (r.avgSpeed * 3.6).toFixed(1) + " km/h）"],
+    ["最大速度", (r.maxSpeed * 3.6).toFixed(1) + " km/h"],
+    ["点数 / 间距", r.pts.length + " 点 / " + r.step.toFixed(1) + " m"],
+    ["开始时间", new Date(r.meta.startMs).toLocaleString("zh-CN", { hour12: false })],
+    ["结束时间", new Date(r.meta.endMs).toLocaleString("zh-CN", { hour12: false })],
+    ["路线拐弯", r.meta.turns + " 次"],
+    ["海拔来源", r.meta.eleLabel]
+  ].map(([k, v]) => '<div class="stat"><span>' + k + '</span><b>' + v + '</b></div>').join("");
+  $("#result").classList.remove("hide");
+  $("#result").scrollIntoView({ behavior: "smooth", block: "start" });
+  drawMap(r);
+}
+
+function drawMap(r) {
+  const card = $("#mapcard");
+  card.classList.remove("hide");
+  if (typeof L === "undefined") {
+    $("#map").innerHTML = '<div style="padding:20px;color:#67728a;font-size:14px">' +
+      '地图库没加载出来（可能需要翻墙或换网络）。轨迹本身已经生成，不影响下载。</div>';
+    return;
+  }
+  const coords = r.pts.map(p => [p.lat, p.lon]);
+  const map = L.map("map", { zoomControl: true, attributionControl: false });
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+  const line = L.polyline(coords, { color: "#0b57d0", weight: 4 }).addTo(map);
+  L.circleMarker(coords[0], { radius: 8, color: "#fff", weight: 2, fillColor: "#0a8f4a", fillOpacity: 1 })
+    .addTo(map).bindPopup("起点");
+  L.circleMarker(coords[coords.length - 1], { radius: 8, color: "#fff", weight: 2, fillColor: "#c62828", fillOpacity: 1 })
+    .addTo(map).bindPopup("终点");
+  map.fitBounds(line.getBounds(), { padding: [24, 24] });
+  setTimeout(() => map.invalidateSize(), 200);
+}
+
+function download(name, data, mime) {
+  const blob = new Blob([data], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  log("已下载：" + name, "ok");
+}
+
+function stamp() {
+  const d = new Date(), p = n => String(n).padStart(2, "0");
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "_" + p(d.getHours()) + p(d.getMinutes());
+}
+
+$("#btnKey").onclick = () => {
+  $("#keyInput").value = getKey();
+  $("#keydlg").showModal();
+};
+$("#keySave").onclick = () => {
+  const v = $("#keyInput").value.trim();
+  if (v && v.length < 10) { toast("Key 看起来不对（长度 " + v.length + "）"); return; }
+  try { v ? localStorage.setItem(KEY_STORE, v) : localStorage.removeItem(KEY_STORE); } catch (e) {}
+  $("#keydlg").close();
+  refreshKeyBar();
+  toast(v ? "Key 已保存" : "已清除 Key");
+};
+$("#keyCancel").onclick = () => $("#keydlg").close();
+$("#btnGo").onclick = generate;
+
+$("#dlFit").onclick = () => {
+  if (!last) return;
+  download("keep_" + stamp() + ".fit", last.fit, "application/octet-stream");
+};
+$("#dlTcx").onclick = () => {
+  if (!last) return;
+  download("keep_" + stamp() + ".tcx", last.tcx, "application/xml");
+};
+
+refreshKeyBar();
+if (!getKey()) setTimeout(() => log("还没有设置 Key。点上面的「设置 Key」填入高德 Web服务 Key。", "warn"), 300);
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {
+      log("Service Worker 注册失败（file:// 打开时正常），不影响生成。", "dim");
+    });
+  });
+}
+</script>
+</body>
+</html>
