@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#0b57d0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -17,160 +17,200 @@
   --line:#e2e7f0; --radius:14px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
 body{
-  margin:0;background:var(--bg);color:var(--ink);
+  margin:0;background:var(--bg);color:var(--ink);overflow:hidden;
   font:16px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
-  padding:0 14px calc(20px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;
 }
-header{padding:18px 2px 10px}
-h1{margin:0;font-size:20px;letter-spacing:.5px}
-.sub{color:var(--muted);font-size:13px;margin-top:4px}
+/* ── 上半：地图 ───────────────────────────── */
+#mapwrap{position:relative;height:60vh;min-height:260px;flex:none;background:#e6ecf6}
+#map{position:absolute;inset:0}
+#mapmask{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:12px;background:#e6ecf6;color:var(--muted);font-size:14px;
+  text-align:center;padding:20px;z-index:5}
+#mapmask.hide{display:none}
+#mapbadge{position:absolute;left:10px;top:10px;z-index:6;background:rgba(255,255,255,.94);
+  border-radius:10px;padding:8px 12px;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.12);
+  max-width:calc(100% - 20px);line-height:1.45}
+#mapbadge b{color:var(--brand)}
+.mapbtns{position:absolute;right:10px;top:10px;z-index:6;display:flex;flex-direction:column;gap:8px}
+.mapbtns button{min-height:42px;padding:0 12px;font-size:14px;border-radius:10px;
+  background:rgba(255,255,255,.96);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.14)}
+.pin{width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:#0b57d0;
+  color:#fff;font:600 13px/26px -apple-system,sans-serif;text-align:center;
+  border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.pin.start{background:#0a8f4a}
+/* ── 下半：面板 ───────────────────────────── */
+#panel{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:12px 14px calc(24px + env(safe-area-inset-bottom))}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tabs button{flex:1;min-height:48px;border-radius:12px;background:#e7edf9;color:var(--brand);
+  font-size:15px;font-weight:600}
+.tabs button.on{background:var(--brand);color:#fff}
 .card{background:var(--card);border-radius:var(--radius);padding:14px;
   box-shadow:0 1px 3px rgba(16,40,80,.07);margin-bottom:12px}
-.card h2{font-size:14px;margin:0 0 10px;color:var(--muted);font-weight:600;letter-spacing:.3px}
-label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px}
+.card h2{font-size:13px;margin:0 0 10px;color:var(--muted);font-weight:600;letter-spacing:.3px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
 input,select,button{font-family:inherit}
 input[type=text],input[type=password],input[type=number],select{
-  width:100%;padding:14px 14px;font-size:17px;border:1.5px solid var(--line);
-  border-radius:12px;background:#fbfcfe;color:var(--ink);outline:none;
-  min-height:52px;appearance:none;
-}
+  width:100%;padding:13px;font-size:17px;border:1.5px solid var(--line);
+  border-radius:12px;background:#fbfcfe;color:var(--ink);outline:none;min-height:50px;appearance:none}
 input:focus,select:focus{border-color:var(--brand);background:#fff}
 .row{display:flex;gap:10px}
 .row>*{flex:1;min-width:0}
-button{
-  border:0;border-radius:12px;font-size:17px;font-weight:600;
-  min-height:54px;padding:0 18px;cursor:pointer;transition:.15s;
-}
+button{border:0;border-radius:12px;font-size:16px;font-weight:600;
+  min-height:52px;padding:0 16px;cursor:pointer;transition:.15s}
 button:active{transform:scale(.985)}
-.btn-primary{background:var(--brand);color:#fff;width:100%;margin-top:16px}
-.btn-primary:disabled{background:#a9bce0;cursor:not-allowed}
-.btn-ghost{background:#eef2fb;color:var(--brand);font-size:15px;min-height:44px;padding:0 14px}
+button:disabled{opacity:.55}
+.btn-primary{background:var(--brand);color:#fff;width:100%;margin-top:14px}
+.btn-ghost{background:#eef2fb;color:var(--brand);min-height:44px;font-size:14px;padding:0 14px}
+.btn-warn{background:#fdecec;color:var(--bad);min-height:44px;font-size:14px;padding:0 14px}
 .btn-dl{background:#0a8f4a;color:#fff;width:100%;margin-top:8px}
 .btn-dl.tcx{background:#3a5f9e}
-#keybar{display:flex;align-items:center;gap:10px;font-size:14px}
-#keybar .dot{width:10px;height:10px;border-radius:50%;flex:none}
-#keybar.ok .dot{background:var(--ok)}
-#keybar.bad .dot{background:var(--bad);animation:pulse 1.4s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
-#keybar .txt{flex:1;min-width:0}
-#keybar.alert{border:1.5px solid var(--bad);background:#fff5f5}
+.hint{font-size:13px;color:var(--muted);line-height:1.6}
+.big{font-size:22px;font-weight:700;color:var(--brand)}
 #log{font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  white-space:pre-wrap;word-break:break-all;margin:0;max-height:260px;overflow:auto;
-  color:#243044}
+  white-space:pre-wrap;word-break:break-all;margin:0;max-height:200px;overflow:auto;color:#243044}
 #log .ok{color:var(--ok)} #log .warn{color:var(--warn)}
 #log .bad{color:var(--bad)} #log .dim{color:var(--muted)}
-#map{height:320px;border-radius:12px;background:#e9eef7}
-.hide{display:none!important}
-.stat{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.stat{display:flex;justify-content:space-between;padding:6px 0;
+  border-bottom:1px dashed var(--line);font-size:14px}
 .stat:last-child{border:0}
 .stat b{font-weight:600}
-#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
-  background:#16202e;color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;
+.hide{display:none!important}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+  background:#16202e;color:#fff;padding:11px 18px;border-radius:12px;font-size:14px;
   opacity:0;pointer-events:none;transition:.25s;max-width:88vw;z-index:99}
 #toast.show{opacity:1}
-dialog{border:0;border-radius:16px;padding:18px;width:min(92vw,420px);
-  box-shadow:0 12px 40px rgba(0,0,0,.25)}
+dialog{border:0;border-radius:16px;padding:18px;width:min(92vw,440px);max-height:86vh;overflow:auto}
 dialog::backdrop{background:rgba(10,20,40,.5)}
-dialog h3{margin:0 0 6px;font-size:17px}
-dialog p{margin:6px 0 12px;font-size:13.5px;color:var(--muted);line-height:1.6}
+dialog h3{margin:0 0 4px;font-size:17px}
+dialog p{margin:4px 0 10px;font-size:13px;color:var(--muted);line-height:1.6}
 .dlg-btns{display:flex;gap:10px;margin-top:14px}
-.dlg-btns button{flex:1}
+.dlg-btns button{flex:1;margin:0}
 </style>
 </head>
 <body>
 
-<header>
-  <h1>Keep 轨迹生成器</h1>
-  <div class="sub">高德真实路网 · 1.5 km · 跑步 · 直出 FIT / TCX</div>
-</header>
-
-<section class="card" id="keybar">
-  <span class="dot"></span>
-  <span class="txt" id="keytxt">检查 Key…</span>
-  <button class="btn-ghost" id="btnKey">设置 Key</button>
-</section>
-
-<section class="card">
-  <h2>参数</h2>
-  <label for="address">地址（中文，越具体越好）</label>
-  <input id="address" type="text" value="重庆市江津区重庆交通职业学院"
-         placeholder="例：杭州市西湖区北山街断桥" autocomplete="off">
-
-  <div class="row">
-    <div>
-      <label for="targetKm">目标距离（km）</label>
-      <input id="targetKm" type="number" value="1.5" step="0.1" min="0.5" max="10" inputmode="decimal">
-    </div>
-    <div>
-      <label for="pace">配速（km/h）</label>
-      <input id="pace" type="number" value="10" step="0.5" min="4" max="20" inputmode="decimal">
-    </div>
-  </div>
-
-  <div class="row">
-    <div>
-      <label for="mode">运动类型</label>
-      <select id="mode">
-        <option value="run" selected>跑步（Keep 显示“户外跑步”）</option>
-        <option value="walk">步行</option>
-      </select>
-    </div>
-    <div>
-      <label for="waypoints">途经点（越多拐弯越多）</label>
-      <select id="waypoints">
-        <option value="3">3</option>
-        <option value="4" selected>4（推荐）</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-      </select>
-    </div>
-  </div>
-
-  <button class="btn-primary" id="btnGo">生成轨迹</button>
-</section>
-
-<section class="card">
-  <h2>进度</h2>
-  <pre id="log" class="dim">等待开始…</pre>
-</section>
-
-<section class="card hide" id="result">
-  <h2>结果</h2>
-  <div id="stats"></div>
-  <button class="btn-dl" id="dlFit">下载 FIT（优先导这个）</button>
-  <button class="btn-dl tcx" id="dlTcx">下载 TCX（备用）</button>
-</section>
-
-<section class="card hide" id="mapcard">
-  <h2>路线预览（蓝线＝轨迹，红点＝起终点）</h2>
+<div id="mapwrap">
   <div id="map"></div>
-  <div class="sub" style="margin-top:8px">底图需联网（OpenStreetMap）；加载不出来时线条仍然可见。</div>
-</section>
+  <div id="mapmask">
+    <div style="font-size:34px">🗺️</div>
+    <div id="masktext">地图还没加载<br>先设置「JS API Key」</div>
+    <button class="btn-ghost" id="btnSetJsKey">设置 JS API Key</button>
+  </div>
+  <div id="mapbadge">在地图上点选途经点<br>至少 2 个才会连线</div>
+  <div class="mapbtns">
+    <button id="btnUndo">撤销</button>
+    <button id="btnClear" class="btn-warn">清除</button>
+  </div>
+</div>
+
+<div id="panel">
+
+  <div class="tabs">
+    <button id="tabManual" class="on">手动绘制</button>
+    <button id="tabAuto">自动生成</button>
+  </div>
+
+  <!-- 手动绘制 -->
+  <div class="card" id="paneManual">
+    <h2>手动绘制</h2>
+    <div class="hint">在地图上依次点选途经点，程序会沿真实步行路网把它们连起来。</div>
+    <div class="stat" style="margin-top:10px"><span>途经点</span><b id="ptCount">0 个</b></div>
+    <div class="stat"><span>路线距离</span><b id="routeLen">0 m</b></div>
+    <div class="stat"><span>预计耗时</span><b id="estDur">—</b></div>
+  </div>
+
+  <!-- 自动生成 -->
+  <div class="card hide" id="paneAuto">
+    <h2>自动生成</h2>
+    <label for="address">地址</label>
+    <input id="address" type="text" value="重庆市江津区重庆交通职业学院"
+           placeholder="例：杭州市西湖区北山街断桥" autocomplete="off">
+    <div class="row">
+      <div>
+        <label for="targetKm">目标距离（km）</label>
+        <input id="targetKm" type="number" value="1.5" step="0.1" min="0.5" max="10" inputmode="decimal">
+      </div>
+      <div>
+        <label for="waypoints">途经点</label>
+        <select id="waypoints">
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>运动参数</h2>
+    <div class="row">
+      <div>
+        <label for="pace">配速（km/h）</label>
+        <input id="pace" type="number" value="10" step="0.5" min="4" max="20" inputmode="decimal">
+      </div>
+      <div>
+        <label for="mode">运动类型</label>
+        <select id="mode">
+          <option value="run" selected>跑步 Running</option>
+          <option value="walk">步行 Walking</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary" id="btnGo">生成运动数据</button>
+    <button class="btn-ghost" id="btnKeys" style="width:100%;margin-top:10px">设置 Key（Web服务 / JS API）</button>
+  </div>
+
+  <div class="card">
+    <h2>进度</h2>
+    <pre id="log" class="dim">等待开始…</pre>
+  </div>
+
+  <div class="card hide" id="result">
+    <h2>结果</h2>
+    <div id="stats"></div>
+    <button class="btn-dl" id="dlFit">下载 FIT（优先导这个）</button>
+    <button class="btn-dl tcx" id="dlTcx">下载 TCX（备用）</button>
+  </div>
+
+</div>
 
 <div id="toast"></div>
 
 <dialog id="keydlg">
-  <h3>设置高德 Key</h3>
-  <p>在 <b>console.amap.com</b> → 应用管理 → 添加 Key，<b>服务平台必须选「Web服务」</b>。
-     Key 只存在本机浏览器（localStorage），不会上传，也不会写进生成的文件。</p>
-  <input id="keyInput" type="password" placeholder="32 位 Key" autocomplete="off" spellcheck="false">
+  <h3>两个 Key，各管一件事</h3>
+  <p><b>Web服务 Key</b>：算路网、查地址（restapi.amap.com）。<br>
+     <b>JS API Key</b>：显示地图、画线。2021 年后申请的 JS Key 还要配套<b>安全密钥</b>。</p>
+
+  <label for="inWebKey">Web服务 Key</label>
+  <input id="inWebKey" type="password" placeholder="32 位，平台选「Web服务」" autocomplete="off">
+
+  <label for="inJsKey">JS API Key</label>
+  <input id="inJsKey" type="password" placeholder="平台选「Web端(JS API)」" autocomplete="off">
+
+  <label for="inSec">安全密钥 securityJsCode（可选但通常必填）</label>
+  <input id="inSec" type="password" placeholder="与 JS API Key 配套的那串" autocomplete="off">
+
   <div class="dlg-btns">
     <button class="btn-ghost" id="keyCancel">取消</button>
     <button class="btn-primary" id="keySave" style="margin:0">保存</button>
   </div>
 </dialog>
 
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" defer></script>
 <script>
 "use strict";
 
+/* ═════════════════ CORE START ═════════════════
+   纯逻辑：不碰 DOM / localStorage / fetch。
+   ═════════════════════════════════════════════ */
 const CORE = {};
 (function (C) {
 
-  const R_EARTH = 6371008.8;
-  const A_AXIS = 6378245.0;
-  const EE = 0.00669342162296594323;
+  const R_EARTH = 6371008.8, A_AXIS = 6378245.0, EE = 0.00669342162296594323;
   const FIT_EPOCH = 631065600;
 
   function outOfChina(lng, lat) {
@@ -192,11 +232,9 @@ const CORE = {};
   }
   function wgs84ToGcj02(lng, lat) {
     if (outOfChina(lng, lat)) return [lng, lat];
-    let dLat = tLat(lng - 105, lat - 35);
-    let dLng = tLng(lng - 105, lat - 35);
+    let dLat = tLat(lng - 105, lat - 35), dLng = tLng(lng - 105, lat - 35);
     const rad = lat / 180 * Math.PI;
-    const magic = 1 - EE * Math.sin(rad) ** 2;
-    const sq = Math.sqrt(magic);
+    const magic = 1 - EE * Math.sin(rad) ** 2, sq = Math.sqrt(magic);
     dLat = (dLat * 180) / ((A_AXIS * (1 - EE)) / (magic * sq) * Math.PI);
     dLng = (dLng * 180) / (A_AXIS / sq * Math.cos(rad) * Math.PI);
     return [lng + dLng, lat + dLat];
@@ -213,15 +251,15 @@ const CORE = {};
     return [wl, wa];
   }
 
-  function haversine(lat1, lon1, lat2, lon2) {
+  const haversine = (lat1, lon1, lat2, lon2) => {
     const p1 = lat1 * Math.PI / 180, p2 = lat2 * Math.PI / 180;
     const dp = p2 - p1, dl = (lon2 - lon1) * Math.PI / 180;
     const h = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
     return 2 * R_EARTH * Math.asin(Math.min(1, Math.sqrt(h)));
-  }
-  function offsetM(lat, lon, dx, dy) {
-    return [lat + dy / 111320, lon + dx / (111320 * Math.cos(lat * Math.PI / 180))];
-  }
+  };
+  const offsetM = (lat, lon, dx, dy) =>
+    [lat + dy / 111320, lon + dx / (111320 * Math.cos(lat * Math.PI / 180))];
+
   function lineLength(pts) {
     let t = 0;
     for (let i = 0; i < pts.length - 1; i++)
@@ -269,10 +307,8 @@ const CORE = {};
         "（infocode=" + ((data && data.infocode) || "?") + "）");
     }
     const paths = (data.route && data.route.paths) || [];
-    if (!paths.length) throw new Error("步行路径规划没有返回 paths（infocode=20004）");
-    const p0 = paths[0];
-    const steps = p0.steps || [];
-    const line = [];
+    if (!paths.length) throw new Error("步行路径规划没有返回 paths（20004）");
+    const p0 = paths[0], steps = p0.steps || [], line = [];
     for (const st of steps) {
       for (const p of parsePolyline(st.polyline)) {
         const last = line[line.length - 1];
@@ -296,15 +332,14 @@ const CORE = {};
   }
 
   function makeWaypoints(cLat, cLon, count, rng, scale, minM, maxM) {
-    const weights = [], n = count;
+    const w = [], n = count;
     let s = 0;
-    for (let i = 0; i < n; i++) { const w = 0.65 + rng() * 0.8; weights.push(w); s += w; }
-    const phase = rng() * Math.PI * 2;
-    const out = [];
+    for (let i = 0; i < n; i++) { const x = 0.65 + rng() * 0.8; w.push(x); s += x; }
+    const phase = rng() * Math.PI * 2, out = [];
     let acc = 0;
     for (let i = 0; i < n; i++) {
       const ang = phase + Math.PI * 2 * acc / s;
-      acc += weights[i];
+      acc += w[i];
       const d = (minM + rng() * (maxM - minM)) * scale;
       const [la, lo] = offsetM(cLat, cLon, d * Math.cos(ang), d * Math.sin(ang));
       out.push([lo, la]);
@@ -322,7 +357,6 @@ const CORE = {};
     let scale = 1, best = null, lastErr = null;
     const targetM = (o.targetKm || 0) * 1000;
     const tol = Math.max(60, targetM * 0.06);
-
     for (let attempt = 1; attempt <= 2; attempt++) {
       const wps = makeWaypoints(o.lat, o.lon, o.waypointCount, o.rng, scale,
         o.waypointMinM, o.waypointMaxM);
@@ -339,29 +373,23 @@ const CORE = {};
           await sleep(150);
         }
       } catch (e) {
-        lastErr = e;
-        log("第 " + attempt + " 次规划失败：" + e.message, "warn");
-        continue;
+        lastErr = e; log("第 " + attempt + " 次规划失败：" + e.message, "warn"); continue;
       }
       const total = lineLength(full);
       log("第 " + attempt + " 次：半径系数 " + scale.toFixed(2) + " / " +
         (chain.length - 1) + " 段 / " + calls + " 次调用 / " + (total / 1000).toFixed(2) + " km");
-      if (!o.targetKm) return { line: full, total, calls, attempts: attempt };
-
+      if (!o.targetKm) return { line: full, total, calls };
       const err = Math.abs(total - targetM);
       if (!best || err < best.err) best = { line: full, total, calls, err };
       if (err <= tol) {
         log("命中目标：" + (total / 1000).toFixed(2) + " km（误差 " + err.toFixed(0) + " m）", "ok");
-        return { line: full, total, calls, attempts: attempt };
+        return { line: full, total, calls };
       }
       scale *= Math.max(0.45, Math.min(2.2, Math.pow(targetM / total, 0.85)));
       log("实际 " + (total / 1000).toFixed(2) + " km 偏离目标，半径系数调成 " +
         scale.toFixed(2) + " 再试一次", "warn");
     }
-    if (best) {
-      log("两次没精确命中，采用最接近的一次：" + (best.total / 1000).toFixed(2) + " km", "warn");
-      return best;
-    }
+    if (best) { log("采用最接近的一次：" + (best.total / 1000).toFixed(2) + " km", "warn"); return best; }
     throw lastErr || new Error("路径规划失败");
   }
 
@@ -371,40 +399,32 @@ const CORE = {};
     let cur = pts[0], carry = 0;
     for (let i = 1; i < pts.length; i++) {
       const nxt = pts[i];
-      let seg = haversine(cur[1], cur[0], nxt[1], nxt[0]);
-      let guard = 0;
+      let seg = haversine(cur[1], cur[0], nxt[1], nxt[0]), guard = 0;
       while (seg > 1e-6 && guard++ < 100000) {
         const need = step - carry;
         if (seg >= need) {
           const t = need / seg;
           cur = [cur[0] + (nxt[0] - cur[0]) * t, cur[1] + (nxt[1] - cur[1]) * t];
-          out.push(cur);
-          seg -= need;
-          carry = 0;
-        } else {
-          carry += seg;
-          cur = nxt;
-          seg = 0;
-        }
+          out.push(cur); seg -= need; carry = 0;
+        } else { carry += seg; cur = nxt; seg = 0; }
       }
     }
-    const tail = haversine(out[out.length - 1][1], out[out.length - 1][0], pts[pts.length - 1][1], pts[pts.length - 1][0]);
+    const tail = haversine(out[out.length - 1][1], out[out.length - 1][0],
+      pts[pts.length - 1][1], pts[pts.length - 1][0]);
     if (tail > step * 0.4) out.push(pts[pts.length - 1]);
     return out;
   }
 
   function fillSmoothElevations(raw, fallback, maxSmooth) {
     maxSmooth = maxSmooth == null ? 0.3 : maxSmooth;
-    const vals = raw.slice();
-    const filled = [];
+    const vals = raw.slice(), filled = [];
     const good = vals.filter(v => v != null && isFinite(v));
     const mean = good.length ? good.reduce((a, b) => a + b, 0) / good.length : fallback;
     for (let i = 0; i < vals.length; i++) {
       if (vals[i] == null || !isFinite(vals[i])) {
         let prev = null;
         for (let j = i - 1; j >= 0; j--) if (vals[j] != null && isFinite(vals[j])) { prev = vals[j]; break; }
-        vals[i] = prev != null ? prev : mean;
-        filled.push(i);
+        vals[i] = prev != null ? prev : mean; filled.push(i);
       }
     }
     const out = [];
@@ -419,10 +439,8 @@ const CORE = {};
   }
 
   function assignTimes(pts, startMs, targetKmh, rng) {
-    const target = Math.max(1, targetKmh) / 3.6;
-    const vCap = target * 1.25;
-    const phase = rng() * Math.PI * 2;
-    const n = pts.length;
+    const target = Math.max(1, targetKmh) / 3.6, vCap = target * 1.25;
+    const phase = rng() * Math.PI * 2, n = pts.length;
     pts[0].t = startMs;
     let acc = 0, carry = 0;
     for (let i = 1; i < n; i++) {
@@ -432,8 +450,7 @@ const CORE = {};
       const span = d / (target * Math.max(0.6, wave)) + carry;
       const floorSec = Math.max(2, Math.ceil(d / vCap));
       const sec = Math.max(floorSec, Math.round(span));
-      carry = span - sec;
-      acc += sec;
+      carry = span - sec; acc += sec;
       pts[i].t = startMs + acc * 1000;
     }
   }
@@ -441,8 +458,7 @@ const CORE = {};
   function pickStartTime(durationSec, range, rng, nowMs) {
     const now = nowMs || Date.now();
     if (range && range.length === 2) {
-      const d0 = new Date(range[0] + "T00:00:00");
-      const d1 = new Date(range[1] + "T00:00:00");
+      const d0 = new Date(range[0] + "T00:00:00"), d1 = new Date(range[1] + "T00:00:00");
       const span = Math.max(0, Math.round((d1 - d0) / 86400000));
       const hours = [6, 7, 8, 17, 18, 19, 20];
       for (let i = 0; i < 60; i++) {
@@ -462,13 +478,13 @@ const CORE = {};
     return new Date(now - durationSec * 1000 - 3600000);
   }
 
-  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-  function utcStr(ms) { return new Date(ms).toISOString().slice(0, 19) + "Z"; }
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const utcStr = ms => new Date(ms).toISOString().slice(0, 19) + "Z";
   function fmtDur(sec) {
     sec = Math.round(sec);
     const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
-    return (h ? h + "小时" + String(m).padStart(2, "0") + "分"
-      : m + "分" + String(s).padStart(2, "0") + "秒");
+    return h ? h + "小时" + String(m).padStart(2, "0") + "分"
+      : m + "分" + String(s).padStart(2, "0") + "秒";
   }
 
   const CRC_TABLE = [0x0000, 0xCC01, 0xD801, 0x1400, 0xF001, 0x3C00, 0x2800, 0xE401,
@@ -485,7 +501,6 @@ const CORE = {};
     return crc;
   }
   const BT = { ENUM: 0x00, STR: 0x07, U16: 0x84, U32: 0x86, U32Z: 0x8C, S32: 0x85 };
-
   const FIT_FILE_ID = [[0, 1, BT.ENUM], [1, 2, BT.U16], [3, 4, BT.U32Z], [4, 4, BT.U32], [8, 24, BT.STR]];
   const FIT_RECORD = [[253, 4, BT.U32], [0, 4, BT.S32], [1, 4, BT.S32], [2, 2, BT.U16], [5, 4, BT.U32], [6, 2, BT.U16]];
   const FIT_LAP = [[253, 4, BT.U32], [2, 4, BT.U32], [3, 4, BT.S32], [4, 4, BT.S32], [5, 4, BT.S32], [6, 4, BT.S32],
@@ -496,10 +511,10 @@ const CORE = {};
     [25, 2, BT.U16], [26, 2, BT.U16], [0, 1, BT.ENUM], [1, 1, BT.ENUM]];
   const FIT_ACTIVITY = [[253, 4, BT.U32], [0, 4, BT.U32], [1, 2, BT.U16], [2, 1, BT.ENUM], [3, 1, BT.ENUM], [4, 1, BT.ENUM]];
 
-  function u8(v) { return [v & 0xFF]; }
-  function u16(v) { return [v & 0xFF, (v >> 8) & 0xFF]; }
-  function u32(v) { v = v >>> 0; return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
-  function s32(v) { return u32(v < 0 ? v + 4294967296 : v); }
+  const u8 = v => [v & 0xFF];
+  const u16 = v => [v & 0xFF, (v >> 8) & 0xFF];
+  const u32 = v => { v = v >>> 0; return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; };
+  const s32 = v => u32(v < 0 ? v + 4294967296 : v);
 
   function packField(base, size, value) {
     if (base === BT.ENUM) return u8(value | 0);
@@ -538,10 +553,7 @@ const CORE = {};
     };
 
     let lid = define(0, FIT_FILE_ID);
-    data(lid, FIT_FILE_ID, {
-      0: 4, 1: 1, 3: meta.serial, 4: fitTime(meta.endMs),
-      8: meta.eleTag.slice(0, 24)
-    });
+    data(lid, FIT_FILE_ID, { 0: 4, 1: 1, 3: meta.serial, 4: fitTime(meta.endMs), 8: meta.eleTag.slice(0, 24) });
 
     lid = define(20, FIT_RECORD);
     for (const p of pts) {
@@ -575,18 +587,15 @@ const CORE = {};
     data(lid, FIT_ACTIVITY, { 253: fitTime(meta.endMs), 0: fitDur(meta.elapsed), 1: 1, 2: 0, 3: 8, 4: 1 });
 
     const header = [14, 0x10, 0x54, 0x08].concat(u32(bytes.length), [0x2E, 0x46, 0x49, 0x54]);
-    const headerCrc = fitCrc(header);
-    header.push(...u16(headerCrc));
+    header.push(...u16(fitCrc(header)));
     const full = header.concat(bytes);
-    const fileCrc = fitCrc(full);
-    full.push(...u16(fileCrc));
+    full.push(...u16(fitCrc(full)));
     return new Uint8Array(full);
   }
 
-  function esc(s) {
-    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
+  const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
   function buildTcx(pts, meta) {
     const L = [];
     L.push('<?xml version="1.0" encoding="UTF-8"?>');
@@ -631,32 +640,14 @@ const CORE = {};
     return L.join("\n");
   }
 
-  async function buildTrack(cfg, api, log) {
+  /* 把一条 GCJ-02 折线装配成完整记录（手动/自动两条路共用） */
+  async function assembleTrack(lineGcj, cfg, api, log) {
     const rng = mulberry32(cfg.seed >>> 0);
-    const o = Object.assign({
-      waypointCount: 4, waypointMinM: 110, waypointMaxM: 260,
-      elevationFallback: 30, startDateRange: null
-    }, cfg);
-
-    log("① 解析地址：" + o.address);
-    const geo = await api.geocode(o.address);
-    log("   → " + geo.formatted + "（" + geo.lng.toFixed(6) + ", " + geo.lat.toFixed(6) + "）", "ok");
-
-    const center = [geo.lng, geo.lat];
-    log("② 规划路网：起点 → " + o.waypointCount + " 个途经点 → 起点（目标 " + o.targetKm + " km）");
-    const route = await planRoute({
-      lat: geo.lat, lon: geo.lng, center, rng,
-      targetKm: o.targetKm, waypointCount: o.waypointCount,
-      waypointMinM: o.waypointMinM, waypointMaxM: o.waypointMaxM
-    }, api, log);
-    const turns = countTurns(route.line);
-    log("   原始折线 " + route.line.length + " 顶点 / " + (route.total / 1000).toFixed(2) +
-      " km / 拐弯 " + turns + " 次 / 接口调用 " + route.calls + " 次",
-      turns >= 8 ? "ok" : "warn");
+    const o = Object.assign({ elevationFallback: 30, startDateRange: null, paceKmh: 10 }, cfg);
 
     const step = o.sampleMeters > 0 ? o.sampleMeters
       : Math.max(4, Math.round((o.paceKmh / 3.6) * 3.5 * 2) / 2);
-    const line = resampleLine(route.line, step);
+    const line = resampleLine(lineGcj, step);
     log("③ 按 " + step.toFixed(1) + " 米重采样 → " + line.length + " 个点");
 
     const pts = [];
@@ -678,22 +669,18 @@ const CORE = {};
       if (rawEle && rawEle.some(v => v != null && isFinite(v))) {
         eleSrc = "Open-Elevation"; eleKind = "real";
       } else rawEle = null;
-    } catch (e) {
-      log("   Open-Elevation 不可用：" + e.message, "warn");
-    }
+    } catch (e) { log("   Open-Elevation 不可用：" + e.message, "warn"); }
     if (!rawEle) {
-      log("   降级为基准海拔 " + o.elevationFallback + " m（非真实地形，Keep 不影响）", "warn");
+      log("   降级为基准海拔 " + o.elevationFallback + " m（非真实地形）", "warn");
       rawEle = new Array(pts.length).fill(null);
     }
     const es = fillSmoothElevations(rawEle, o.elevationFallback, 0.3);
     for (let i = 0; i < pts.length; i++) pts[i].ele = es.eles[i];
     log("   高程来源：" + eleSrc + " ｜ " + Math.min(...es.eles).toFixed(1) + " ~ " +
       Math.max(...es.eles).toFixed(1) + " m", eleKind === "real" ? "ok" : "warn");
-    if (es.filled.length && eleKind === "real")
-      log("   有 " + es.filled.length + " 个点缺高程，已用邻近值填补", "warn");
 
-    log("⑤ 生成时间戳（目标 " + o.paceKmh + " km/h）");
     const estDur = total / (o.paceKmh / 3.6);
+    log("⑤ 生成时间戳（目标 " + o.paceKmh + " km/h，约 " + fmtDur(estDur) + "）");
     const start = pickStartTime(estDur, o.startDateRange, rng);
     assignTimes(pts, start.getTime(), o.paceKmh, rng);
 
@@ -712,8 +699,7 @@ const CORE = {};
     const avgSpeed = total / Math.max(1e-6, elapsed);
     const maxSpeed = Math.max(...pts.map(p => p.speed));
 
-    const kg = o.weightKg || 65;
-    const kmhNow = avgSpeed * 3.6;
+    const kg = o.weightKg || 65, kmhNow = avgSpeed * 3.6;
     const met = kmhNow < 4.5 ? 2.8 : kmhNow < 5.5 ? 3.5 : kmhNow < 6.5 ? 4.3 :
       kmhNow < 8 ? 6.0 : kmhNow < 9.5 ? 8.3 : 9.8;
     const calories = Math.max(1, Math.round(met * kg * elapsed / 3600));
@@ -723,44 +709,68 @@ const CORE = {};
     const meta = {
       startMs: pts[0].t, endMs: pts[pts.length - 1].t,
       elapsed, distance: total, avgSpeed, maxSpeed, calories,
-      sport: isRun ? 1 : 11,
-      sportTcx: isRun ? "Running" : "Other",
-      serial: 10000000 + Math.floor(rng() * 89999999),
-      eleTag,
+      sport: isRun ? 1 : 11, sportTcx: isRun ? "Running" : "Other",
+      serial: 10000000 + Math.floor(rng() * 89999999), eleTag,
       eleLabel: eleKind === "real"
-        ? ("Open-Elevation 真实 DEM（" + Math.min(...es.eles).toFixed(0) + "~" +
-           Math.max(...es.eles).toFixed(0) + " m）")
-        : ("基准海拔 " + o.elevationFallback + " m（合成）"),
+        ? "Open-Elevation 真实 DEM（" + Math.min(...es.eles).toFixed(0) + "~" +
+          Math.max(...es.eles).toFixed(0) + " m）"
+        : "基准海拔 " + o.elevationFallback + " m（合成）",
       note: "海拔来源：" + eleSrc + "（" + (eleKind === "real"
-        ? "真实 DEM 地面高程，不反映桥面/天桥/隧道"
-        : "合成值，非真实地形") +
-        "）；路线来源：高德步行路径规划；点数 " + pts.length + "。",
-      turns
+        ? "真实 DEM 地面高程，不反映桥面/天桥/隧道" : "合成值，非真实地形") +
+        "）；路线来源：" + (o.routeSrc || "高德步行路径规划") + "；点数 " + pts.length + "。"
     };
 
     log("⑥ 写入文件…");
-    const fit = buildFit(pts, meta);
-    const tcx = buildTcx(pts, meta);
+    const fit = buildFit(pts, meta), tcx = buildTcx(pts, meta);
     log("   FIT " + (fit.length / 1024).toFixed(1) + " KB ｜ TCX " +
       (new Blob([tcx]).size / 1024).toFixed(1) + " KB", "ok");
+    return { pts, meta, fit, tcx, step, total, elapsed, avgSpeed, maxSpeed };
+  }
 
-    return { pts, meta, fit, tcx, routeLine: route.line, step, total, elapsed, avgSpeed, maxSpeed };
+  /* 自动模式：地址 → 规划 → 装配 */
+  async function buildTrack(cfg, api, log) {
+    const rng = mulberry32(cfg.seed >>> 0);
+    log("① 解析地址：" + cfg.address);
+    const geo = await api.geocode(cfg.address);
+    log("   → " + geo.formatted + "（" + geo.lng.toFixed(6) + ", " + geo.lat.toFixed(6) + "）", "ok");
+    log("② 规划路网：起点 → " + cfg.waypointCount + " 个途经点 → 起点（目标 " + cfg.targetKm + " km）");
+    const route = await planRoute({
+      lat: geo.lat, lon: geo.lng, center: [geo.lng, geo.lat], rng,
+      targetKm: cfg.targetKm, waypointCount: cfg.waypointCount,
+      waypointMinM: 110, waypointMaxM: 260
+    }, api, log);
+    log("   原始折线 " + route.line.length + " 顶点 / 拐弯 " + countTurns(route.line) + " 次", "ok");
+    const r = await assembleTrack(route.line, Object.assign({}, cfg, { routeSrc: "高德步行路径规划（自动）" }), api, log);
+    r.geo = geo;
+    return r;
   }
 
   Object.assign(C, {
-    R_EARTH, haversine, offsetM, lineLength, countTurns,
-    wgs84ToGcj02, gcj02ToWgs84, outOfChina,
-    parsePolyline, parseWalkingResponse,
-    mulberry32, makeWaypoints, jitterPt, planRoute, resampleLine,
-    fillSmoothElevations, assignTimes, pickStartTime,
-    fitCrc, buildFit, buildTcx, buildTrack,
-    utcStr, fmtDur, sleep
+    haversine, offsetM, lineLength, countTurns, wgs84ToGcj02, gcj02ToWgs84,
+    parsePolyline, parseWalkingResponse, mulberry32, planRoute, resampleLine,
+    fillSmoothElevations, assignTimes, pickStartTime, fitCrc, buildFit, buildTcx,
+    assembleTrack, buildTrack, utcStr, fmtDur, sleep
   });
 })(CORE);
+/* ═════════════════ CORE END ═════════════════ */
 
+
+/* ═════════════════ UI ═════════════════ */
 const $ = s => document.querySelector(s);
 const logEl = $("#log");
-const KEY_STORE = "keep_track_amap_key_v1";
+const STORE = {
+  web: "kt_web_key_v1",
+  js: "kt_js_key_v1",
+  sec: "kt_sec_code_v1"
+};
+const ls = {
+  get(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } },
+  set(k, v) { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch (e) {} }
+};
+const getWebKey = () => ls.get(STORE.web);
+const getJsKey = () => ls.get(STORE.js);
+const getSec = () => ls.get(STORE.sec);
+const maskKey = k => (k && k.length >= 8) ? k.slice(0, 4) + "****" : "****";
 
 function log(msg, cls) {
   const t = new Date().toTimeString().slice(0, 8);
@@ -775,56 +785,41 @@ function toast(msg, ms) {
   const el = $("#toast");
   el.textContent = msg; el.classList.add("show");
   clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.remove("show"), ms || 2200);
-}
-function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
-function maskKey(k) { return k && k.length >= 8 ? k.slice(0, 4) + "****" : "****"; }
-
-function refreshKeyBar() {
-  const k = getKey(), bar = $("#keybar"), txt = $("#keytxt");
-  if (k.length >= 10) {
-    bar.className = "card ok";
-    txt.innerHTML = "Key 已设置（<b>" + maskKey(k) + "</b>）";
-  } else {
-    bar.className = "card bad alert";
-    txt.innerHTML = "<b>未设置高德 Key</b>，点右边按钮填入才能生成";
-  }
+  el._t = setTimeout(() => el.classList.remove("show"), ms || 2400);
 }
 
+/* ── 网络层 ── */
 async function fetchJson(url, opt) {
   const r = await fetch(url, Object.assign({ referrerPolicy: "no-referrer" }, opt || {}));
   if (!r.ok) throw new Error("HTTP " + r.status);
   return r.json();
 }
-function xy(pt) { return pt[0].toFixed(6) + "," + pt[1].toFixed(6); }
+const xy = pt => pt[0].toFixed(6) + "," + pt[1].toFixed(6);
 
 const API = {
   async geocode(address) {
-    const key = getKey();
-    if (!key) throw new Error("未设置 Key");
+    const key = getWebKey();
+    if (!key) throw new Error("未设置 Web服务 Key");
     const url = "https://restapi.amap.com/v3/geocode/geo?key=" + encodeURIComponent(key) +
       "&address=" + encodeURIComponent(address) + "&output=JSON";
     const d = await fetchJson(url);
     if (String(d.status) !== "1") throw new Error("地理编码失败：" + d.info + "（" + d.infocode + "）");
-    if (!d.geocodes || !d.geocodes.length) throw new Error("这个地址没解析出坐标，加「市+区+路名」再试");
-    const g = d.geocodes[0];
-    const [lng, lat] = g.location.split(",").map(Number);
+    if (!d.geocodes || !d.geocodes.length) throw new Error("地址没解析出坐标，加「市+区+路名」再试");
+    const g = d.geocodes[0], [lng, lat] = g.location.split(",").map(Number);
     return { lng, lat, formatted: g.formatted_address || address };
   },
-
-  async walking(origin, dest) {
-    const key = getKey();
+  async walking(o, d) {
+    const key = getWebKey();
+    if (!key) throw new Error("未设置 Web服务 Key");
     const url = "https://restapi.amap.com/v3/direction/walking?key=" + encodeURIComponent(key) +
-      "&origin=" + xy(origin) + "&destination=" + xy(dest) + "&output=JSON";
-    const d = await fetchJson(url);
-    return CORE.parseWalkingResponse(d, JSON.stringify(d));
+      "&origin=" + xy(o) + "&destination=" + xy(d) + "&output=JSON";
+    const j = await fetchJson(url);
+    return CORE.parseWalkingResponse(j, JSON.stringify(j));
   },
-
   async elevation(points) {
     const out = [];
-    const B = 100;
-    for (let i = 0; i < points.length; i += B) {
-      const batch = points.slice(i, i + B);
+    for (let i = 0; i < points.length; i += 100) {
+      const batch = points.slice(i, i + 100);
       const r = await fetch("https://api.open-elevation.com/api/v1/lookup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -841,37 +836,201 @@ const API = {
   }
 };
 
+/* ── 地图 ── */
+let AMapRef = null, map = null, markers = [], polylines = [];
+let waypoints = [];          // [{lng,lat}]
+let segments = [];           // [{path:[[lng,lat]...], dist}]  与 waypoints 相邻对一一对应
+let routingBusy = false;
+
+function loadAMap(jsKey, secCode) {
+  return new Promise((resolve, reject) => {
+    if (window.AMap) return resolve(window.AMap);
+    // 安全密钥必须在脚本加载之前挂到全局
+    window._AMapSecurityConfig = { securityJsCode: secCode || "" };
+    const s = document.createElement("script");
+    s.src = "https://webapi.amap.com/maps?v=2.0&key=" + encodeURIComponent(jsKey);
+    s.async = true;
+    s.onload = () => window.AMap ? resolve(window.AMap) : reject(new Error("脚本已加载但 AMap 对象不存在（Key 可能被拒）"));
+    s.onerror = () => reject(new Error("AMap 脚本加载失败：检查网络 / Key 是否填错"));
+    document.head.appendChild(s);
+  });
+}
+
+async function initMap() {
+  const jsKey = getJsKey();
+  if (!jsKey) { $("#mapmask").classList.remove("hide"); return; }
+  $("#masktext").textContent = "地图加载中…";
+  $("#btnSetJsKey").classList.add("hide");
+  try {
+    AMapRef = await loadAMap(jsKey, getSec());
+  } catch (e) {
+    $("#masktext").innerHTML = "地图加载失败<br><span style='font-size:12px'>" + e.message + "</span>";
+    $("#btnSetJsKey").classList.remove("hide");
+    log(e.message, "bad");
+    return;
+  }
+  try {
+    map = new AMapRef.Map("map", {
+      zoom: 15,
+      center: [106.286268, 29.405570],
+      viewMode: "2D",
+      resizeEnable: true,
+      showLabel: true
+    });
+    map.on("click", onMapClick);
+    $("#mapmask").classList.add("hide");
+    log("地图已就绪，开始点选吧", "ok");
+  } catch (e) {
+    $("#masktext").innerHTML = "地图初始化失败<br><span style='font-size:12px'>" + e.message + "</span>";
+    $("#btnSetJsKey").classList.remove("hide");
+    log("地图初始化失败：" + e.message, "bad");
+  }
+}
+
+function pinContent(i) {
+  return '<div class="pin' + (i === 0 ? " start" : "") + '">' + (i + 1) + "</div>";
+}
+
+async function onMapClick(e) {
+  if (!map) return;
+  const lng = e.lnglat.getLng(), lat = e.lnglat.getLat();
+  waypoints.push({ lng, lat });
+  const mk = new AMapRef.Marker({
+    position: [lng, lat],
+    anchor: "center",
+    content: pinContent(waypoints.length - 1),
+    offset: new AMapRef.Pixel(0, 0)
+  });
+  map.add(mk);
+  markers.push(mk);
+  refreshStats();
+
+  if (waypoints.length >= 2) await routeLast();
+}
+
+async function routeLast() {
+  if (routingBusy) return;
+  const n = waypoints.length;
+  if (n < 2) return;
+  const a = waypoints[n - 2], b = waypoints[n - 1];
+  routingBusy = true;
+  try {
+    const seg = await API.walking([a.lng, a.lat], [b.lng, b.lat]);
+    segments[n - 2] = { path: seg.line, dist: CORE.lineLength(seg.line) };
+    const pl = new AMapRef.Polyline({
+      path: seg.line.map(p => [p[1], p[0]]),
+      strokeColor: "#0b57d0", strokeWeight: 6, strokeOpacity: 0.92,
+      lineJoin: "round", showDir: true
+    });
+    map.add(pl);
+    polylines.push(pl);
+    log("第 " + n + " 点已连线：沿路 " + (seg.apiDistance || CORE.lineLength(seg.line)).toFixed(0) + " m", "ok");
+  } catch (e) {
+    log("连线失败：" + e.message, "bad");
+    toast("连线失败，看一下日志");
+  } finally {
+    routingBusy = false;
+    refreshStats();
+  }
+}
+
+function clearAll() {
+  markers.forEach(m => map && map.remove(m));
+  polylines.forEach(p => map && map.remove(p));
+  markers = []; polylines = []; waypoints = []; segments = [];
+  refreshStats();
+  log("已清空路线", "dim");
+}
+
+function undoLast() {
+  if (!waypoints.length) return;
+  const m = markers.pop();
+  if (m && map) map.remove(m);
+  waypoints.pop();
+  const p = polylines.pop();
+  if (p && map) map.remove(p);
+  if (segments.length > waypoints.length - 1) segments.length = Math.max(0, waypoints.length - 1);
+  refreshStats();
+}
+
+function routeDistance() {
+  let t = 0;
+  for (const s of segments) if (s) t += s.dist;
+  return t;
+}
+
+function refreshStats() {
+  const n = waypoints.length;
+  const dist = routeDistance();
+  $("#ptCount").textContent = n + " 个";
+  $("#routeLen").textContent = dist >= 1000 ? (dist / 1000).toFixed(2) + " km" : dist.toFixed(0) + " m";
+  const pace = parseFloat($("#pace").value) || 10;
+  $("#estDur").textContent = dist > 0
+    ? CORE.fmtDur(dist / (pace / 3.6) * 1) + "（按 " + pace + " km/h）"
+    : "—";
+  const badge = $("#mapbadge");
+  if (n === 0) badge.innerHTML = "在地图上点选途经点<br>至少 2 个才会连线";
+  else if (n === 1) badge.innerHTML = "已选 <b>1</b> 个点，再点一个就连线";
+  else badge.innerHTML = "已选 <b>" + n + "</b> 个点 · 路线 <b>" +
+    (dist >= 1000 ? (dist / 1000).toFixed(2) + " km" : dist.toFixed(0) + " m") + "</b>";
+}
+
+/* ── 生成 ── */
 let last = null;
 
-async function generate() {
-  const btn = $("#btnGo");
-  if (!getKey()) { $("#keydlg").showModal(); return; }
-
-  const cfg = {
+function currentCfg() {
+  return {
     address: $("#address").value.trim(),
     targetKm: parseFloat($("#targetKm").value) || 0,
     paceKmh: parseFloat($("#pace").value) || 10,
     mode: $("#mode").value,
     waypointCount: parseInt($("#waypoints").value, 10) || 4,
     seed: (Date.now() % 100000) | 0,
-    startDateRange: ["2026-11-01", "2026-11-04"]
+    startDateRange: ["2026-11-01", "2026-11-04"],
+    weightKg: 65
   };
+}
+
+async function generate() {
+  const btn = $("#btnGo");
+  const cfg = currentCfg();
+  const manual = $("#tabManual").classList.contains("on");
+
+  if (!getWebKey()) { openKeyDlg(); toast("先设置 Web服务 Key"); return; }
+  if (manual && waypoints.length < 2) { toast("先在地图上点至少 2 个点"); return; }
 
   btn.disabled = true; btn.textContent = "生成中…";
   $("#result").classList.add("hide");
-  $("#mapcard").classList.add("hide");
   logEl.textContent = "";
-  log("开始：" + cfg.address + " ｜ " + cfg.targetKm + " km ｜ " + cfg.paceKmh + " km/h");
 
   try {
-    last = await CORE.buildTrack(cfg, API, log);
-    showResult(last, cfg);
+    let r;
+    if (manual) {
+      const line = [];
+      for (const s of segments) {
+        if (!s) continue;
+        for (const p of s.path) {
+          const lastP = line[line.length - 1];
+          if (!lastP || Math.abs(lastP[0] - p[0]) > 1e-7 || Math.abs(lastP[1] - p[1]) > 1e-7) line.push(p);
+        }
+      }
+      if (line.length < 2) throw new Error("路线点不够，先在地图上多点几个点");
+      log("① 手动绘制：" + waypoints.length + " 个途经点 / " + segments.length + " 段");
+      log("② 提取路网折线 → " + line.length + " 个顶点 / " +
+        (CORE.lineLength(line) / 1000).toFixed(2) + " km");
+      r = await CORE.assembleTrack(line,
+        Object.assign({}, cfg, { routeSrc: "高德步行路径规划（手动点选）" }), API, log);
+    } else {
+      r = await CORE.buildTrack(cfg, API, log);
+    }
+    last = r;
+    showResult(r, cfg);
     toast("生成成功");
   } catch (e) {
     log("失败：" + e.message, "bad");
     toast("失败：" + e.message.slice(0, 60), 4000);
   } finally {
-    btn.disabled = false; btn.textContent = "生成轨迹";
+    btn.disabled = false; btn.textContent = "生成运动数据";
   }
 }
 
@@ -888,32 +1047,10 @@ function showResult(r, cfg) {
     ["点数 / 间距", r.pts.length + " 点 / " + r.step.toFixed(1) + " m"],
     ["开始时间", new Date(r.meta.startMs).toLocaleString("zh-CN", { hour12: false })],
     ["结束时间", new Date(r.meta.endMs).toLocaleString("zh-CN", { hour12: false })],
-    ["路线拐弯", r.meta.turns + " 次"],
     ["海拔来源", r.meta.eleLabel]
   ].map(([k, v]) => '<div class="stat"><span>' + k + '</span><b>' + v + '</b></div>').join("");
   $("#result").classList.remove("hide");
   $("#result").scrollIntoView({ behavior: "smooth", block: "start" });
-  drawMap(r);
-}
-
-function drawMap(r) {
-  const card = $("#mapcard");
-  card.classList.remove("hide");
-  if (typeof L === "undefined") {
-    $("#map").innerHTML = '<div style="padding:20px;color:#67728a;font-size:14px">' +
-      '地图库没加载出来（可能需要翻墙或换网络）。轨迹本身已经生成，不影响下载。</div>';
-    return;
-  }
-  const coords = r.pts.map(p => [p.lat, p.lon]);
-  const map = L.map("map", { zoomControl: true, attributionControl: false });
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
-  const line = L.polyline(coords, { color: "#0b57d0", weight: 4 }).addTo(map);
-  L.circleMarker(coords[0], { radius: 8, color: "#fff", weight: 2, fillColor: "#0a8f4a", fillOpacity: 1 })
-    .addTo(map).bindPopup("起点");
-  L.circleMarker(coords[coords.length - 1], { radius: 8, color: "#fff", weight: 2, fillColor: "#c62828", fillOpacity: 1 })
-    .addTo(map).bindPopup("终点");
-  map.fitBounds(line.getBounds(), { padding: [24, 24] });
-  setTimeout(() => map.invalidateSize(), 200);
 }
 
 function download(name, data, mime) {
@@ -925,44 +1062,60 @@ function download(name, data, mime) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
   log("已下载：" + name, "ok");
 }
-
 function stamp() {
   const d = new Date(), p = n => String(n).padStart(2, "0");
-  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "_" + p(d.getHours()) + p(d.getMinutes());
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "_" +
+    p(d.getHours()) + p(d.getMinutes());
 }
 
-$("#btnKey").onclick = () => {
-  $("#keyInput").value = getKey();
+/* ── Key 弹窗 ── */
+function openKeyDlg() {
+  $("#inWebKey").value = getWebKey();
+  $("#inJsKey").value = getJsKey();
+  $("#inSec").value = getSec();
   $("#keydlg").showModal();
+}
+
+/* ── 事件 ── */
+$("#tabManual").onclick = () => {
+  $("#tabManual").classList.add("on"); $("#tabAuto").classList.remove("on");
+  $("#paneManual").classList.remove("hide"); $("#paneAuto").classList.add("hide");
 };
-$("#keySave").onclick = () => {
-  const v = $("#keyInput").value.trim();
-  if (v && v.length < 10) { toast("Key 看起来不对（长度 " + v.length + "）"); return; }
-  try { v ? localStorage.setItem(KEY_STORE, v) : localStorage.removeItem(KEY_STORE); } catch (e) {}
+$("#tabAuto").onclick = () => {
+  $("#tabAuto").classList.add("on"); $("#tabManual").classList.remove("on");
+  $("#paneAuto").classList.remove("hide"); $("#paneManual").classList.add("hide");
+};
+$("#btnClear").onclick = clearAll;
+$("#btnUndo").onclick = undoLast;
+$("#btnKeys").onclick = openKeyDlg;
+$("#btnSetJsKey").onclick = openKeyDlg;
+$("#btnGo").onclick = generate;
+$("#pace").oninput = refreshStats;
+$("#dlFit").onclick = () => last && download("keep_" + stamp() + ".fit", last.fit, "application/octet-stream");
+$("#dlTcx").onclick = () => last && download("keep_" + stamp() + ".tcx", last.tcx, "application/xml");
+
+$("#keySave").onclick = async () => {
+  const w = $("#inWebKey").value.trim(), j = $("#inJsKey").value.trim(), s = $("#inSec").value.trim();
+  ls.set(STORE.web, w); ls.set(STORE.js, j); ls.set(STORE.sec, s);
   $("#keydlg").close();
-  refreshKeyBar();
-  toast(v ? "Key 已保存" : "已清除 Key");
+  log("Key 已保存（Web服务 " + maskKey(w) + " / JS API " + maskKey(j) + "）", "ok");
+  if (j && !map) await initMap();
+  toast("已保存");
 };
 $("#keyCancel").onclick = () => $("#keydlg").close();
-$("#btnGo").onclick = generate;
 
-$("#dlFit").onclick = () => {
-  if (!last) return;
-  download("keep_" + stamp() + ".fit", last.fit, "application/octet-stream");
-};
-$("#dlTcx").onclick = () => {
-  if (!last) return;
-  download("keep_" + stamp() + ".tcx", last.tcx, "application/xml");
-};
-
-refreshKeyBar();
-if (!getKey()) setTimeout(() => log("还没有设置 Key。点上面的「设置 Key」填入高德 Web服务 Key。", "warn"), 300);
+/* ── 启动 ── */
+refreshStats();
+if (!getWebKey() || !getJsKey()) {
+  log("首次使用：先设置 Web服务 Key 和 JS API Key", "warn");
+  setTimeout(openKeyDlg, 400);
+} else if (getJsKey()) {
+  initMap();
+}
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {
-      log("Service Worker 注册失败（file:// 打开时正常），不影响生成。", "dim");
-    });
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
 }
 </script>
