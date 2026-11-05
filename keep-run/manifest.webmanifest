@@ -1,0 +1,17 @@
+{
+  "name": "Keep 轨迹生成器",
+  "short_name": "轨迹生成",
+  "description": "输入中文地址，沿高德真实路网生成 1.5 公里的跑步轨迹，导出 Keep 可导入的 FIT / TCX。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f6fb",
+  "theme_color": "#0b57d0",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
