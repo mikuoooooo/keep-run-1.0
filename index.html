@@ -764,8 +764,19 @@ const STORE = {
   sec: "kt_sec_code_v1"
 };
 const ls = {
-  get(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } },
-  set(k, v) { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch (e) {} }
+  get(k) {
+    try { return localStorage.getItem(k) || ""; }
+    catch (e) { return ""; }
+  },
+  set(k, v) {
+    try {
+      if (v) localStorage.setItem(k, v);
+      else localStorage.removeItem(k);
+      return localStorage.getItem(k) === (v || "");
+    } catch (e) {
+      return false;
+    }
+  }
 };
 const getWebKey = () => ls.get(STORE.web);
 const getJsKey = () => ls.get(STORE.js);
@@ -1096,11 +1107,20 @@ $("#dlTcx").onclick = () => last && download("keep_" + stamp() + ".tcx", last.tc
 
 $("#keySave").onclick = async () => {
   const w = $("#inWebKey").value.trim(), j = $("#inJsKey").value.trim(), s = $("#inSec").value.trim();
-  ls.set(STORE.web, w); ls.set(STORE.js, j); ls.set(STORE.sec, s);
+  const saved = [
+    ls.set(STORE.web, w),
+    ls.set(STORE.js, j),
+    ls.set(STORE.sec, s)
+  ];
+  if (saved.some(ok => !ok)) {
+    log("Key 保存失败：浏览器未能写入本地存储。请检查浏览器隐私设置/站点存储权限，或退出无痕模式后重试。", "bad");
+    toast("保存失败：浏览器阻止了本地存储", 4000);
+    return;
+  }
   $("#keydlg").close();
-  log("Key 已保存（Web服务 " + maskKey(w) + " / JS API " + maskKey(j) + "）", "ok");
+  log("Key 已保存并验证写入（Web服务 " + maskKey(w) + " / JS API " + maskKey(j) + "）", "ok");
   if (j && !map) await initMap();
-  toast("已保存");
+  toast("已保存，下次打开会自动读取");
 };
 $("#keyCancel").onclick = () => $("#keydlg").close();
 
